@@ -16,8 +16,6 @@
 
 package com.cyanogenmod.settings.device;
 
-import com.android.internal.util.cm.ScreenType;
-
 import android.app.ActionBar;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -32,10 +30,12 @@ public class TouchscreenGestureSettings extends PreferenceActivity {
     private static final String KEY_AMBIENT_DISPLAY_ENABLE = "ambient_display_enable";
     private static final String KEY_HAND_WAVE = "gesture_hand_wave";
     private static final String KEY_GESTURE_POCKET = "gesture_pocket";
+    private static final String KEY_PROXIMITY_WAKE = "proximity_wake_enable";
 
     private SwitchPreference mAmbientDisplayPreference;
     private SwitchPreference mHandwavePreference;
     private SwitchPreference mPocketPreference;
+    private SwitchPreference mProximityWakePreference;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,9 +50,13 @@ public class TouchscreenGestureSettings extends PreferenceActivity {
         mHandwavePreference =
             (SwitchPreference) findPreference(KEY_HAND_WAVE);
         mHandwavePreference.setEnabled(dozeEnabled);
+        mHandwavePreference.setOnPreferenceChangeListener(mProximityListener);
         mPocketPreference =
             (SwitchPreference) findPreference(KEY_GESTURE_POCKET);
         mPocketPreference.setEnabled(dozeEnabled);
+        mProximityWakePreference =
+            (SwitchPreference) findPreference(KEY_PROXIMITY_WAKE);
+        mProximityWakePreference.setOnPreferenceChangeListener(mProximityListener);
 
         final ActionBar actionBar = getActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -61,11 +65,6 @@ public class TouchscreenGestureSettings extends PreferenceActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        // If running on a phone, remove padding around the listview
-        if (!ScreenType.isTablet(this)) {
-            getListView().setPadding(0, 0, 0, 0);
-        }
     }
 
     @Override
@@ -98,6 +97,21 @@ public class TouchscreenGestureSettings extends PreferenceActivity {
                 mPocketPreference.setEnabled(enable);
             }
             return ret;
+        }
+    };
+
+    private Preference.OnPreferenceChangeListener mProximityListener =
+        new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object newValue) {
+            if ((boolean) newValue) {
+                if (preference.getKey().equals(KEY_HAND_WAVE)) {
+                    mProximityWakePreference.setChecked(false);
+                } else if (preference.getKey().equals(KEY_PROXIMITY_WAKE)) {
+                    mHandwavePreference.setChecked(false);
+                }
+            }
+            return true;
         }
     };
 }
